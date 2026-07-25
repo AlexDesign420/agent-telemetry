@@ -1,0 +1,26 @@
+# The pseudonymization salt. Publishing it would make every hash reversible.
+.salt
+
+# Raw session logs must never enter version control: they hold prompt text,
+# absolute paths and whatever a tool happened to print.
+raw/
+*.jsonl
+!tests/fixtures/*.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Notebooks keep their outputs; checkpoints do not
+.ipynb_checkpoints/
+
+.DS_Store

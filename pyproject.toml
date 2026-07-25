@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-telemetry"
+version = "0.1.0"
+description = "Privacy-preserving metrics extraction and analysis for Claude Code session logs"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [{ name = "AlexDesign420" }]
+keywords = ["telemetry", "analytics", "llm", "claude-code", "privacy", "data-analysis"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+  "pandas>=2.2",
+  "pyarrow>=16.0",
+]
+
+[project.optional-dependencies]
+viz = ["matplotlib>=3.8"]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.5",
+  "mypy>=1.10",
+  "pandas-stubs",
+  "matplotlib>=3.8",
+  "nbconvert>=7.16",
+  "ipykernel>=6.29",
+]
+
+[project.scripts]
+agent-telemetry = "agent_telemetry.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/AlexDesign420/agent-telemetry"
+Issues = "https://github.com/AlexDesign420/agent-telemetry/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_telemetry"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unreachable = true
+files = ["src/agent_telemetry"]
+
+[[tool.mypy.overrides]]
+module = ["matplotlib.*", "pyarrow.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
