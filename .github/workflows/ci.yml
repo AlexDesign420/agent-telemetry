@@ -1,0 +1,75 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keep the pseudonymization key out of the runner's home directory and make
+  # every CI run produce the same labels.
+  AGENT_TELEMETRY_SALT: ci-fixed-salt
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install ${{ matrix.python }}
+      - run: uv pip install --system -e ".[dev]"
+      - run: pytest --cov=agent_telemetry --cov-report=term-missing
+
+  privacy:
+    # The published dataset is re-checked on every push. If a change to the
+    # scanner starts finding something in data/, this job goes red before anyone
+    # relies on the file being clean.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install 3.12
+      - run: uv pip install --system -e .
+      - name: scan the published dataset
+        run: |
+          agent-telemetry scan data/sessions.parquet
+          agent-telemetry scan data/events.parquet
+
+  notebooks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - name: execute every notebook against the published dataset
+        run: |
+          cd notebooks
+          for notebook in *.ipynb; do
+            jupyter nbconvert --to notebook --execute --stdout "$notebook" > /dev/null
+          done

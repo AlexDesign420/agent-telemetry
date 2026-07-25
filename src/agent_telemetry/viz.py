@@ -46,7 +46,7 @@ def use_style() -> None:
             "savefig.bbox": "tight",
             "font.size": 10,
             "axes.titlesize": 11,
-            "axes.titleweight": "medium",
+            "axes.titleweight": "bold",
             "axes.titlelocation": "left",
             "axes.labelcolor": MUTED,
             "axes.edgecolor": GRID,
