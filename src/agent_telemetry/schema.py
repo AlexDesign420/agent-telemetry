@@ -36,9 +36,20 @@ class Event:
     """Position of this event within its session, starting at zero."""
 
     timestamp: str
-    """ISO timestamp truncated to the hour."""
+    """ISO timestamp truncated to the hour.
 
-    type: str
+    Truncated because an exact timestamp combined with a project label is close to
+    a fingerprint. Anything that needs finer resolution uses ``offset_seconds``.
+    """
+
+    offset_seconds: float = 0.0
+    """Seconds since the first event of this session.
+
+    Computed from the untruncated timestamps and kept because a duration is not
+    identifying while an exact wall clock time is.
+    """
+
+    type: str = ""
     role: str = ""
     model: str = ""
     effort: str = ""

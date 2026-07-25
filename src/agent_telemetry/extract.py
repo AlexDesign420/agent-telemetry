@@ -13,6 +13,7 @@ over the tail of a file that is still being appended to.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -60,6 +61,16 @@ class ExtractionStats:
 def iter_session_files(root: Path) -> Iterator[Path]:
     """Yield every session log below ``root`` in a stable order."""
     yield from sorted(root.rglob("*.jsonl"))
+
+
+def _parse_timestamp(timestamp: str | None) -> datetime | None:
+    """Parse an ISO timestamp. Used for durations and then discarded."""
+    if not timestamp:
+        return None
+    try:
+        return datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def _truncate_to_hour(timestamp: str | None) -> str:
@@ -124,6 +135,9 @@ def _event_from_record(
     record: dict[str, Any],
     sequence: int,
     pseudonymizer: Pseudonymizer,
+    session_id: str,
+    project_id: str,
+    offset_seconds: float,
 ) -> Event:
     message = record.get("message")
     message = message if isinstance(message, dict) else {}
@@ -131,11 +145,12 @@ def _event_from_record(
     content = _count_content(message.get("content"))
 
     return Event(
-        session=pseudonymizer.session(record.get("sessionId")),
-        project=pseudonymizer.project(record.get("cwd")),
+        session=pseudonymizer.session(session_id),
+        project=pseudonymizer.project(record.get("cwd") or project_id),
         branch=pseudonymizer.branch(record.get("gitBranch")),
         sequence=sequence,
         timestamp=_truncate_to_hour(record.get("timestamp")),
+        offset_seconds=round(offset_seconds, 1),
         type=str(record.get("type") or ""),
         role=str(message.get("role") or ""),
         model=str(message.get("model") or ""),
@@ -170,8 +185,16 @@ def extract_file(
     stats = stats if stats is not None else ExtractionStats()
     stats.files += 1
 
+    # The file is the session. Individual records carry sessionId inconsistently:
+    # bookkeeping lines such as mode changes and titles have no message and no
+    # session field, and grouping on the field alone collects all of them from
+    # every session into one meaningless group.
+    session_id = path.stem
+    project_id = path.parent.name
+
     events: list[Event] = []
     sequence = 0
+    session_start: datetime | None = None
 
     with path.open(encoding="utf-8", errors="replace") as handle:
         for line in handle:
@@ -193,7 +216,16 @@ def extract_file(
             if track_unknown:
                 stats.note_unknown(unknown_fields(record))
 
-            events.append(_event_from_record(record, sequence, pseudonymizer))
+            moment = _parse_timestamp(record.get("timestamp"))
+            if moment and session_start is None:
+                session_start = moment
+            offset = (moment - session_start).total_seconds() if moment and session_start else 0.0
+
+            events.append(
+                _event_from_record(
+                    record, sequence, pseudonymizer, session_id, project_id, offset
+                )
+            )
             sequence += 1
             stats.events += 1
 
