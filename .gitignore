@@ -5,7 +5,6 @@
 # absolute paths and whatever a tool happened to print.
 raw/
 *.jsonl
-!tests/fixtures/*.jsonl
 
 # Python
 __pycache__/
