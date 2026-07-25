@@ -92,9 +92,7 @@ def effort_distribution(events: pd.DataFrame) -> pd.DataFrame:
     if working.empty:
         return pd.DataFrame(columns=["model", "effort", "events", "share"])
 
-    counted = (
-        working.groupby(["model", "effort"], observed=True).size().reset_index(name="events")
-    )
+    counted = working.groupby(["model", "effort"], observed=True).size().reset_index(name="events")
     totals = counted.groupby("model", observed=True)["events"].transform("sum")
     counted["share"] = (counted["events"] / totals).round(4)
     return counted.sort_values(["model", "events"], ascending=[True, False]).reset_index(drop=True)

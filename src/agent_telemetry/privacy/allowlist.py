@@ -43,9 +43,7 @@ ALLOWED_TOP_LEVEL_FIELDS: Final[frozenset[str]] = frozenset(
 # Read, but hashed before anything keeps them.
 PSEUDONYMIZED_FIELDS: Final[frozenset[str]] = frozenset({"sessionId", "cwd", "gitBranch"})
 
-ALLOWED_MESSAGE_FIELDS: Final[frozenset[str]] = frozenset(
-    {"role", "model", "stop_reason", "usage"}
-)
+ALLOWED_MESSAGE_FIELDS: Final[frozenset[str]] = frozenset({"role", "model", "stop_reason", "usage"})
 
 ALLOWED_USAGE_FIELDS: Final[frozenset[str]] = frozenset(
     {

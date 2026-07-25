@@ -13,9 +13,9 @@ over the tail of a file that is still being appended to.
 from __future__ import annotations
 
 import json
-from datetime import datetime
 from collections.abc import Iterator
 from dataclasses import dataclass, field
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -222,9 +222,7 @@ def extract_file(
             offset = (moment - session_start).total_seconds() if moment and session_start else 0.0
 
             events.append(
-                _event_from_record(
-                    record, sequence, pseudonymizer, session_id, project_id, offset
-                )
+                _event_from_record(record, sequence, pseudonymizer, session_id, project_id, offset)
             )
             sequence += 1
             stats.events += 1

@@ -59,9 +59,18 @@ def cache_efficiency_by_length(sessions: pd.DataFrame, bins: int = 6) -> pd.Data
     if working.empty:
         return pd.DataFrame()
 
-    working["length_bucket"] = pd.qcut(
-        working["events"], q=bins, duplicates="drop", precision=0
-    )
+    try:
+        working["length_bucket"] = pd.qcut(
+            working["events"], q=bins, duplicates="drop", precision=0
+        )
+    except ValueError:
+        # Too few distinct lengths to cut into quantiles, which happens on small
+        # or synthetic inputs. One bucket still answers the question, it just
+        # answers it with less resolution.
+        working["length_bucket"] = "all"
+
+    if working["length_bucket"].nunique() == 0:
+        working["length_bucket"] = "all"
 
     grouped = working.groupby("length_bucket", observed=True).agg(
         sessions=("session", "count"),
@@ -113,7 +122,11 @@ def estimate_cost(sessions: pd.DataFrame, rates: dict[str, float] | None = None)
     ) / per_million
 
     without_cache = (
-        (sessions["input_tokens"] + sessions["cache_creation_tokens"] + sessions["cache_read_tokens"])
+        (
+            sessions["input_tokens"]
+            + sessions["cache_creation_tokens"]
+            + sessions["cache_read_tokens"]
+        )
         * rates["input"]
         + sessions["output_tokens"] * rates["output"]
     ) / per_million

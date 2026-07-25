@@ -22,7 +22,9 @@ def session_overview(sessions: pd.DataFrame) -> pd.DataFrame:
     if sessions.empty:
         return pd.DataFrame(columns=["metric", "value"])
 
-    tokens = sessions[["input_tokens", "output_tokens", "cache_creation_tokens", "cache_read_tokens"]]
+    tokens = sessions[
+        ["input_tokens", "output_tokens", "cache_creation_tokens", "cache_read_tokens"]
+    ]
     metrics = {
         "sessions": len(sessions),
         "events": int(sessions["events"].sum()),
@@ -116,9 +118,7 @@ def delegating_sessions(sessions: pd.DataFrame, events: pd.DataFrame) -> pd.Data
         "median events when delegating": float(delegating_main["events"].median())
         if len(delegating_main)
         else 0.0,
-        "median events otherwise": float(
-            main[~main["session"].isin(delegating)]["events"].median()
-        )
+        "median events otherwise": float(main[~main["session"].isin(delegating)]["events"].median())
         if len(main)
         else 0.0,
     }
@@ -135,12 +135,14 @@ def version_timeline(sessions: pd.DataFrame) -> pd.DataFrame:
     if sessions.empty or "client_version" not in sessions.columns:
         return pd.DataFrame(columns=["client_version", "sessions"])
 
-    grouped = sessions[sessions["client_version"] != ""].groupby(
-        "client_version", observed=True
-    ).agg(
-        sessions=("session", "count"),
-        median_events=("events", "median"),
-        mean_cache_hit_rate=("cache_hit_rate", "mean"),
+    grouped = (
+        sessions[sessions["client_version"] != ""]
+        .groupby("client_version", observed=True)
+        .agg(
+            sessions=("session", "count"),
+            median_events=("events", "median"),
+            mean_cache_hit_rate=("cache_hit_rate", "mean"),
+        )
     )
     grouped["mean_cache_hit_rate"] = grouped["mean_cache_hit_rate"].round(4)
 

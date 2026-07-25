@@ -115,15 +115,19 @@ def sessions_to_frame(sessions: Iterable[SessionSummary]) -> pd.DataFrame:
         return frame
 
     frame["cache_hit_rate"] = (
-        frame["cache_read_tokens"]
-        / (
-            frame["input_tokens"] + frame["cache_creation_tokens"] + frame["cache_read_tokens"]
-        ).replace(0, pd.NA)
-    ).fillna(0.0).round(4)
+        (
+            frame["cache_read_tokens"]
+            / (
+                frame["input_tokens"] + frame["cache_creation_tokens"] + frame["cache_read_tokens"]
+            ).replace(0, pd.NA)
+        )
+        .fillna(0.0)
+        .round(4)
+    )
 
     frame["tool_error_rate"] = (
-        frame["tool_errors"] / frame["tool_calls"].replace(0, pd.NA)
-    ).fillna(0.0).round(4)
+        (frame["tool_errors"] / frame["tool_calls"].replace(0, pd.NA)).fillna(0.0).round(4)
+    )
 
     frame["total_tokens"] = (
         frame["input_tokens"]
@@ -150,13 +154,23 @@ def write_dataset(
 ) -> tuple[pd.DataFrame, pd.DataFrame, list[Suppression]]:
     """Aggregate, anonymize, verify and write both tables.
 
-    Order matters and is not negotiable: anonymize, then scan, then write. The
-    scan sees the exact frame that reaches disk.
+    The scan runs twice, and both passes are necessary for different reasons.
+
+    Before k-anonymity, because folding rare categories into ``other`` would
+    otherwise hide a leak that happened to be rare. A value that leaks once would
+    be silently suppressed while the same value leaking six times would be
+    caught, which makes the guarantee depend on how often a mistake was repeated.
+
+    After k-anonymity, because that pass sees the exact frame that reaches disk,
+    and nothing may be added to it after the check.
     """
     sessions = summarize_sessions(events)
 
     event_frame = events_to_frame(events)
     session_frame = sessions_to_frame(sessions)
+
+    enforce(event_frame)
+    enforce(session_frame)
 
     event_frame, event_suppressions = apply_k_anonymity(event_frame, list(Event.CATEGORICAL), k)
     session_frame, session_suppressions = apply_k_anonymity(
