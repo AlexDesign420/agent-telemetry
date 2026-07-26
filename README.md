@@ -1,5 +1,6 @@
 # agent-telemetry
 
+[![ci](https://github.com/AlexDesign420/agent-telemetry/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexDesign420/agent-telemetry/actions/workflows/ci.yml)
 [![license](https://img.shields.io/badge/code-MIT-blue.svg)](LICENSE)
 [![data](https://img.shields.io/badge/data-CC%20BY%204.0-blue.svg)](data/LICENSE)
 
